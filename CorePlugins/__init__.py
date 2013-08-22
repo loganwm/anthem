@@ -1,0 +1,1 @@
+from CoreSearchPlugin import CoreSearchPlugin
