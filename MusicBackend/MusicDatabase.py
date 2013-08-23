@@ -242,6 +242,32 @@ class MusicDatabase:
 			
 		return tracks
 
+	def searchByArtist(self, query):
+		tracks = []
+
+		param = "%"+query+"%"
+	
+		print param
+	
+		self.cursor.execute(r'''
+				SELECT
+					id, title, artist, album, filepath, track_number
+				FROM tracks
+				WHERE
+					artist LIKE ? ''', [param])
+
+		for row in self.cursor:
+			track = MusicStructures.Track()
+			track.id = row[0]
+			track.title = row[1]
+			track.artist = row[2]
+			track.album = row[3]
+			track.filepath = row[4]
+			track.track_number = row[5]
+			tracks.append(track)
+			
+		return tracks
+
 	def searchByAlbum(self, query):
 		albums = {}
 	

@@ -102,7 +102,7 @@ class MenuEntryHeader(QtGui.QListWidgetItem):
 		self.setFont(font)
 		
 		self.setFlags(QtCore.Qt.NoItemFlags | QtCore.Qt.ItemIsEnabled)
-		#
+		
 		self.setText(title)
 	
 class MenuEntry(QtGui.QListWidgetItem):
@@ -111,9 +111,17 @@ class MenuEntry(QtGui.QListWidgetItem):
 	def __init__(self, title, callback):
 		super(MenuEntry, self).__init__()
 		
+		self.setFlags(QtCore.Qt.NoItemFlags | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
+		
 		self.setText(title)
 		self._callback_ = callback
-		
+	
+	def allowDraggable(self):
+		self.setFlags(self.flags() | QtCore.Qt.ItemIsDragEnabled)
+
+	def disallowDraggable(self):
+		self.setFlags(self.flags() & ~QtCore.Qt.ItemIsDragEnabled)
+	
 	def call(self):
 		if self._callback_ == None:
 			print "No callback specified for: " + self.text()

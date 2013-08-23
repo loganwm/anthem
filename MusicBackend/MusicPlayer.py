@@ -29,8 +29,10 @@ class MusicPlayer:
 		self.previously_played = deque()
 		self.play_queue = deque()
 		
-		self.shuffle = True
-		self.loop = True
+		self.shuffle = False
+		self.repeat = False
+
+		self._callback_onplayqueuechanged_ = []
 
 	def dispatchIncomingMessages(self):
 		while self.running:
@@ -88,6 +90,9 @@ class MusicPlayer:
 		self.outbound_messages.put(message)
 		#print message
 
+	def getPlayQueue(self):
+		return self.play_queue
+
 	def queueTracks(self, tracks):
 		self.play_queue = deque()
 
@@ -103,9 +108,17 @@ class MusicPlayer:
 			for track in shuffled_tracks:
 				self.play_queue.append(track)
 
+		self.callPlayQueueChanged()
+
 		print "--Playlist--"
 		for track in self.play_queue:
 			print track.title
+
+	def setShuffle(self, value):
+		self.shuffle = value
+		
+	def setRepeat(self, value):
+		self.repeat = value
 
 	def playTrack(self, track):
 		self.sendMessage("{\"type\":\"PLAYTRACK\", \"path\":\"" + track.filepath + "\"}\n")
@@ -113,10 +126,16 @@ class MusicPlayer:
 		self.current_track = track
 		self.track_playing = True
 
+
 	def playNextTrack(self):
 		if len(self.play_queue) != 0:
 			track = self.play_queue.popleft()
 			
+			if self.repeat:
+				self.play_queue.append(track)
+				
+			self.callPlayQueueChanged()
+
 			if self.current_track != None:
 				self.previously_played.appendleft(self.current_track)
 			
@@ -125,15 +144,21 @@ class MusicPlayer:
 			print "No more tracks"
 
 	def playPreviousTrack(self):
-		print self.previously_played
-
+		if self.current_track_time > 5000:
+			self.seekTrack(0)
+			return
+	
 		if len(self.previously_played) != 0:
 			track = self.previously_played.popleft()
+			self.play_queue.appendleft(track)
 			self.play_queue.appendleft(self.current_track)
-			self.playTrack(track)
+			
+			self.callPlayQueueChanged()
+			
+			self.playTrack(track)		
 		else:
+			self.seekTrack(0)
 			print "No more tracks"
-
 
 	def pauseTrack(self):
 		if self.current_track != None:
@@ -151,4 +176,13 @@ class MusicPlayer:
 
 	def setVolume(self, volume):
 		self.sendMessage("{\"type\":\"SETVOLUME\", \"volume\":" + str(volume) + "}\n")
-		
+
+	def callPlayQueueChanged(self):
+		for callback in self._callback_onplayqueuechanged_:
+			callback()
+
+	def onPlayQueueChanged(self, callback):
+		if hasattr(callback, '__call__'):
+			self._callback_onplayqueuechanged_.append(callback)
+		else:
+			print "Please supply a valid callback"

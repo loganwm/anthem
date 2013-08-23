@@ -1,1 +1,2 @@
 from CoreSearchPlugin import CoreSearchPlugin
+from CorePlayQueuePlugin import CorePlayQueuePlugin

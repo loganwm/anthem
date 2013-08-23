@@ -4,6 +4,7 @@ import collections
 class CoreSearchPlugin:
 	_current_tracklist_ = collections.OrderedDict()
 	_last_search_ = ""
+
 	def __init__(self):
 		print "hello"
 	
@@ -17,6 +18,8 @@ class CoreSearchPlugin:
 
 		group.addMenuEntry(PlayerWidgets.MenuEntry("by title", self.switchToSearchByTitle))
 		x = PlayerWidgets.MenuEntry("by artist", self.switchToSearchByArtist)
+		x.allowDraggable()
+		x.disallowDraggable()
 		group.addMenuEntry(x)
 		group.addMenuEntry(PlayerWidgets.MenuEntry("by album", self.switchToSearchByAlbum))
 
@@ -47,7 +50,17 @@ class CoreSearchPlugin:
 			for track in tracks:
 				self._tracklist_widget_.addTrack(track)
 				self._current_tracklist_[track.id] = track
-				
+			
+
+		elif self._searchmode_ == "BYARTIST":
+			tracks = self._db_.searchByArtist(query)
+			self._tracklist_widget_.clearTracks()
+			self._current_tracklist_.clear()
+
+			for track in tracks:
+				self._tracklist_widget_.addTrack(track)
+				self._current_tracklist_[track.id] = track
+	
 		elif self._searchmode_ == "BYALBUM":
 			albums = self._db_.searchByAlbum(query)
 			self._albumlist_widget_.clearAlbums()

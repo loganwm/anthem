@@ -1,6 +1,7 @@
 from PyQt4 import QtGui, QtCore
 from PyQt4.phonon import Phonon
 
+import Menus
 import PlayerWidgets
 import MusicBackend
 import CorePlugins
@@ -14,7 +15,7 @@ db.start()
 db.clearTracks()
 db.importDirectory(".")
 __MAIN_WINDOW__ = None
-
+__SETTINGS_WINDOW__ = None
 
 class PlayerWindow(QtGui.QMainWindow):
 	def __init__(self):
@@ -22,6 +23,9 @@ class PlayerWindow(QtGui.QMainWindow):
 		
 		global __MAIN_WINDOW__
 		__MAIN_WINDOW__ = self
+
+		global __SETTINGS_WINDOW__
+		__SETTINGS_WINDOW__ = Menus.SettingsWindow()
 
 		self.initUI()
 		self.initializePlugins()
@@ -57,6 +61,8 @@ class PlayerWindow(QtGui.QMainWindow):
 
 	def initializePlugins(self):
 		self.core_plugins = {}
+		self.core_plugins["playqueue"] = CorePlugins.CorePlayQueuePlugin()
+		self.core_plugins["playqueue"].initialize(self, db, player)
 		self.core_plugins["search"] = CorePlugins.CoreSearchPlugin()
 		self.core_plugins["search"].initialize(self, db, player)
 	
@@ -168,6 +174,9 @@ class PlayerOrderControls(QtGui.QWidget):
 		shuffleButton = QtGui.QPushButton("~");	
 		repeatButton = QtGui.QPushButton("o");
 
+		shuffleButton.setCheckable(True)
+		repeatButton.setCheckable(True)
+
 		layout = QtGui.QHBoxLayout()
 
 		#clear margins
@@ -177,6 +186,18 @@ class PlayerOrderControls(QtGui.QWidget):
 		layout.addWidget(repeatButton, 1)
 
 		self.setLayout(layout)
+		
+		shuffleButton.clicked.connect(self.shuffleClicked)
+		repeatButton.clicked.connect(self.repeatClicked)
+
+		self._shuffle_button_ = shuffleButton
+		self._repeat_button_ = repeatButton
+		
+	def shuffleClicked(self):
+		player.setShuffle(self._shuffle_button_.isChecked())
+
+	def repeatClicked(self):
+		player.setRepeat(self._repeat_button_.isChecked())
 
 class PlayerVolumeControls(QtGui.QWidget):
 	def __init__(self):
@@ -394,11 +415,17 @@ class PlayerMenu(QtGui.QMenuBar):
 		exit_action = QtGui.QAction("&Exit", self)
 		exit_action.setShortcut("Ctrl+Q")
 		exit_action.setStatusTip("exit app")
-		exit_action.triggered.connect(QtGui.qApp.quit)
+		exit_action.triggered.connect(__MAIN_WINDOW__.close)
+
+		settings_action = QtGui.QAction("&Settings", self)
+		settings_action.setStatusTip("edit settings")
+		settings_action.triggered.connect(__SETTINGS_WINDOW__.show)
 		
 		file_menu = self.addMenu("&File")
 		file_menu.addAction(exit_action)
-
+		edit_menu = self.addMenu("&Edit")
+		edit_menu.addAction(settings_action)
+		
 class UpdateTrackTimeThread(QtCore.QThread):
 	def run(self):
 		while True:
